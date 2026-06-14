@@ -16,6 +16,19 @@ response = client.chat.completions.create(
 # ✅ Print output
 print(response.choices[0].message.content)
 
+
+from google import genai
+
+client = genai.Client(api_key="AIzaSyC9XOu2WRpI7F_ii1G8SE_g5TNpec8OBdA")
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash-lite",
+    contents="Explain how AI works in a few words",
+)
+
+print(response.text)
+
+
 !pip install pandas
 !pip install numpy
 !pip install matplotlib
