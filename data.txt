@@ -65,3 +65,22 @@ df.drop(
     axis=1,
     inplace=True
 )
+
+
+encoders = {}
+
+categorical_cols = [
+    'Gender',
+    'ContractType',
+    'InternetService',
+    'TechSupport',
+    'Churn'
+]
+
+for col in categorical_cols:
+
+    encoder = LabelEncoder()
+
+    df[col] = encoder.fit_transform(df[col])
+
+    encoders[col] = encoder
