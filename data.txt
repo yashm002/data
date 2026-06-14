@@ -46,3 +46,21 @@ sns.countplot(
 )
 
 plt.show()
+
+
+plt.figure(figsize=(8,5))
+
+sns.boxplot(
+    x='Churn',
+    y='MonthlyCharges',
+    data=df
+)
+
+plt.show()
+
+
+df.drop(
+    "CustomerID",
+    axis=1,
+    inplace=True
+)
