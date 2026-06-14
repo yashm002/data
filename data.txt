@@ -48,14 +48,15 @@ sns.countplot(
 plt.show()
 
 
-plt.figure(figsize=(8,5))
+avg_charges = df.groupby('Churn')['MonthlyCharges'].mean()
 
-sns.boxplot(
-    x='Churn',
-    y='MonthlyCharges',
-    data=df
+avg_charges.plot(
+    kind='bar',
+    figsize=(6,4)
 )
 
+plt.title("Average Monthly Charges by Churn")
+plt.ylabel("Monthly Charges")
 plt.show()
 
 
