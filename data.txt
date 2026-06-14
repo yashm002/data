@@ -191,3 +191,10 @@ joblib.dump(
     X.columns.tolist(),
     "feature_columns.pkl"
 )
+
+
+from google.colab import files
+
+files.download("churn_model.pkl")
+files.download("encoders.pkl")
+files.download("feature_columns.pkl")
