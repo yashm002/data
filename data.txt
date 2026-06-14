@@ -148,3 +148,46 @@ print(
         y_pred
     )
 )
+
+
+cm = confusion_matrix(
+    y_test,
+    y_pred
+)
+
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt='d'
+)
+
+plt.show()
+
+
+importance = pd.DataFrame({
+    "Feature": X.columns,
+    "Importance": model.feature_importances_
+})
+
+importance = importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print(importance)
+
+
+joblib.dump(
+    model,
+    "churn_model.pkl"
+)
+
+joblib.dump(
+    encoders,
+    "encoders.pkl"
+)
+
+joblib.dump(
+    X.columns.tolist(),
+    "feature_columns.pkl"
+)
