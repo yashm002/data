@@ -1,5 +1,21 @@
 api = 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
 
+from groq import Groq
+
+# ✅ Replace with your Groq API Key
+client = Groq(api_key="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")
+
+# ✅ Simple prompt
+response = client.chat.completions.create(
+    model="llama3-8b-8192",   # fast + good model
+    messages=[
+        {"role": "user", "content": "Explain machine learning in simple words"}
+    ]
+)
+
+# ✅ Print output
+print(response.choices[0].message.content)
+
 !pip install pandas
 !pip install numpy
 !pip install matplotlib
