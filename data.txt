@@ -1,9 +1,9 @@
-api = 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
+api = 
 
 from groq import Groq
 
 # ✅ Replace with your Groq API Key
-client = Groq(api_key="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")
+client = Groq(api_key="")
 
 # ✅ Simple prompt
 response = client.chat.completions.create(
