@@ -1,0 +1,351 @@
+import streamlit as st
+import pandas as pd
+import joblib
+import os
+import google.generativeai as genai
+
+from dotenv import load_dotenv
+
+# =====================================================
+# PAGE CONFIG
+# =====================================================
+
+st.set_page_config(
+    page_title="Customer Churn Prediction & Retention System",
+    page_icon="📊",
+    layout="wide"
+)
+
+# =====================================================
+# GEMINI SETUP
+# =====================================================
+
+load_dotenv()
+
+api_key = os.getenv("GEMINI_API_KEY")
+
+genai.configure(api_key=api_key)
+
+gemini_model = genai.GenerativeModel(
+    "gemini-2.5-flash"
+)
+
+# =====================================================
+# LOAD MODEL
+# =====================================================
+
+model = joblib.load("churn_model.pkl")
+encoders = joblib.load("encoders.pkl")
+
+# =====================================================
+# SESSION STATES
+# =====================================================
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "customer_context" not in st.session_state:
+    st.session_state.customer_context = {}
+
+# =====================================================
+# TITLE
+# =====================================================
+
+st.title("📊 Customer Churn Prediction & AI Retention Assistant")
+
+st.markdown(
+    """
+Predict customer churn and get personalized AI retention strategies.
+
+Also chat with the AI Customer Support Assistant.
+"""
+)
+
+# =====================================================
+# CUSTOMER INPUTS
+# =====================================================
+
+st.header("👤 Customer Information")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    age = st.number_input(
+        "Age",
+        min_value=18,
+        max_value=100,
+        value=30
+    )
+
+    gender = st.selectbox(
+        "Gender",
+        ["Male", "Female"]
+    )
+
+    tenure = st.number_input(
+        "Tenure (Months)",
+        min_value=0,
+        max_value=100,
+        value=12
+    )
+
+    monthly_charges = st.number_input(
+        "Monthly Charges",
+        min_value=0.0,
+        value=100.0
+    )
+
+with col2:
+
+    contract_type = st.selectbox(
+        "Contract Type",
+        [
+            "Month-to-Month",
+            "One-Year",
+            "Two-Year"
+        ]
+    )
+
+    internet_service = st.selectbox(
+        "Internet Service",
+        [
+            "DSL",
+            "Fiber Optic",
+            "No Internet"
+        ]
+    )
+
+    tech_support = st.selectbox(
+        "Tech Support",
+        [
+            "Yes",
+            "No"
+        ]
+    )
+
+# =====================================================
+# PREDICTION
+# =====================================================
+
+if st.button("🔍 Predict Churn"):
+
+    gender_encoded = encoders[
+        "Gender"
+    ].transform([gender])[0]
+
+    contract_encoded = encoders[
+        "ContractType"
+    ].transform([contract_type])[0]
+
+    internet_encoded = encoders[
+        "InternetService"
+    ].transform([internet_service])[0]
+
+    tech_encoded = encoders[
+        "TechSupport"
+    ].transform([tech_support])[0]
+
+    total_charges = tenure * monthly_charges
+
+    input_df = pd.DataFrame(
+        [[
+            age,
+            gender_encoded,
+            tenure,
+            monthly_charges,
+            contract_encoded,
+            internet_encoded,
+            total_charges,
+            tech_encoded
+        ]],
+        columns=[
+            'Age',
+            'Gender',
+            'Tenure',
+            'MonthlyCharges',
+            'ContractType',
+            'InternetService',
+            'TotalCharges',
+            'TechSupport'
+        ]
+    )
+
+    prediction = model.predict(input_df)[0]
+
+    probability = model.predict_proba(
+        input_df
+    )[0][1]
+
+    st.session_state.customer_context = {
+
+        "Age": age,
+        "Gender": gender,
+        "Tenure": tenure,
+        "Monthly Charges": monthly_charges,
+        "Contract Type": contract_type,
+        "Internet Service": internet_service,
+        "Tech Support": tech_support,
+        "Churn Probability": f"{probability:.2%}"
+    }
+
+    st.subheader("📈 Prediction Result")
+
+    st.metric(
+        "Churn Probability",
+        f"{probability:.2%}"
+    )
+
+    if prediction == 1:
+
+        st.error(
+            "⚠️ Customer is likely to churn."
+        )
+
+    else:
+
+        st.success(
+            "✅ Customer is likely to stay."
+        )
+
+    # =================================================
+    # RETENTION STRATEGY
+    # =================================================
+
+    st.divider()
+
+    st.header("🎯 AI Retention Strategy")
+
+    retention_prompt = f"""
+    You are a customer retention specialist.
+
+    Customer Profile:
+
+    Age: {age}
+    Gender: {gender}
+    Tenure: {tenure}
+    Monthly Charges: {monthly_charges}
+    Contract Type: {contract_type}
+    Internet Service: {internet_service}
+    Tech Support: {tech_support}
+
+    Predicted Churn Probability:
+    {probability:.2%}
+
+    Provide:
+
+    1. Risk Analysis
+    2. Reasons Customer May Churn
+    3. Retention Strategies
+    4. Personalized Offers
+    5. Recommended Next Actions
+
+    Format using headings and bullet points.
+    """
+
+    with st.spinner(
+        "Generating retention strategy..."
+    ):
+
+        response = gemini_model.generate_content(
+            retention_prompt
+        )
+
+    st.markdown(response.text)
+
+# =====================================================
+# CHATBOT
+# =====================================================
+
+st.divider()
+
+st.header("💬 AI Customer Support Chatbot")
+
+st.write(
+    """
+Ask questions related to:
+
+- Billing
+- Plans
+- Services
+- Complaints
+- Technical Support
+- Customer Retention
+- Churn Reduction
+"""
+)
+
+# =====================================================
+# SHOW CHAT HISTORY
+# =====================================================
+
+for msg in st.session_state.messages:
+
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# =====================================================
+# CHAT INPUT
+# =====================================================
+
+user_message = st.chat_input(
+    "Type your message..."
+)
+
+if user_message:
+
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": user_message
+        }
+    )
+
+    with st.chat_message("user"):
+        st.markdown(user_message)
+
+    customer_context = st.session_state.get(
+        "customer_context",
+        {}
+    )
+
+    chatbot_prompt = f"""
+    You are an expert telecom customer support executive.
+
+    Your responsibilities:
+
+    - Answer customer questions.
+    - Explain bills.
+    - Explain plans.
+    - Explain services.
+    - Resolve complaints.
+    - Improve customer retention.
+    - Be professional and friendly.
+
+    Customer Profile:
+    {customer_context}
+
+    Customer Message:
+    {user_message}
+
+    Give a clear and helpful response.
+    """
+
+    with st.chat_message("assistant"):
+
+        with st.spinner("Thinking..."):
+
+            response = gemini_model.generate_content(
+                chatbot_prompt
+            )
+
+            answer = response.text
+
+            st.markdown(answer)
+
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": answer
+        }
+    )
